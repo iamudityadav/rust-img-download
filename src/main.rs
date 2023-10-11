@@ -16,5 +16,23 @@ async fn main() -> Result<()> {
     let target = "https://www.rust-lang.org/logos/rust-logo-512x512.png";
     let res = reqwest::get(target).await?;
 
+    let mut dest = {
+        let fname = res
+            .url()
+            .path_segments()
+            .and_then(|segments| segments.last())
+            .and_then(|name| if name.is_empty() { None } else { Some(name) })
+            .unwrap_or("tmp.bin");
+
+        println!("\nFile to download: '{}'", fname);
+
+        let fname = temp_dir.path().join(fname);
+        println!("\nwill be located under: {:?}", fname);
+        File::create(fname)?
+    };
+
+    let content = res.bytes().await?;
+    copy(&mut content.as_ref(), &mut dest)?;
+    
     Ok(())
 }
